@@ -5,7 +5,7 @@
 int main(int argc, char *argv[])
 {
     SDL_Init(SDL_INIT_VIDEO);
-    SDL_Surface *screen = SDL_SetVideoMode(640, 480, 32, SDL_SWSURFACE);
+    SDL_Surface *screen = SDL_SetVideoMode(640, 480, 32, SDL_FULLSCREEN | SDL_HWSURFACE);
     SDL_Surface *image = IMG_Load("image.jpg");
 
     if (image == NULL)
@@ -34,6 +34,10 @@ int main(int argc, char *argv[])
 
     bool running = true;
     SDL_Event event;
+
+    int fps = 0;
+    int frameCount = 0;
+    Uint32 fpsTimer = 0;
 
     int i = 0;
 
@@ -154,6 +158,17 @@ int main(int argc, char *argv[])
                 }
             }
         }
+
+        // Handle FPS information
+        if (SDL_GetTicks() - fpsTimer >= 1000) {
+            fps = frameCount;
+            frameCount = 0;
+            fpsTimer = SDL_GetTicks();
+        }
+
+        std::cout << fps << std::endl;
+
+        frameCount++;
     }
 
     SDL_FreeSurface(image);
