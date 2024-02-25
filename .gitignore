@@ -34,6 +34,7 @@
 /Build (GNU)/
 
 obj/
+output/
 
 # logs
 *.log
