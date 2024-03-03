@@ -4,6 +4,8 @@
 #include <iostream>
 
 
+const int BTN_A = 0;
+
 const int WIDTH = 640;
 const int HEIGHT = 480;
 const int BORDER = 40;
@@ -140,8 +142,16 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    SDL_Init(SDL_INIT_VIDEO);
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK);
     IMG_Init(IMG_INIT_JPG);
+
+    printf("Joysticks: %d\n", SDL_NumJoysticks());
+    SDL_Joystick *joystick = NULL;
+    if (SDL_NumJoysticks() > 0) {
+        joystick = SDL_JoystickOpen(0);
+        SDL_JoystickEventState(SDL_ENABLE);
+    }
+    
 
     // SDL_Surface *screen = SDL_SetVideoMode(WIDTH, HEIGHT, COLOR_DEPTH, 
     //                                        SDL_FULLSCREEN | SDL_HWSURFACE);
@@ -390,11 +400,30 @@ int main(int argc, char *argv[])
 
         // Wait for key press
         while (SDL_PollEvent(&event)) {
+
+            printf("event.type: %d\n", event.type);
             
             if (event.type == SDL_QUIT) {
                 running = false;
+
+            } else if (event.type == SDL_JOYBUTTONDOWN) {
+
+                printf("Button: %d\n", event.jbutton.button);
+
+                switch (event.jbutton.button) {
+                case BTN_A: 
+                    running = false;
+                    break;
+                    
+                default:
+                    printf("Press button A to exit.\n");
+                    break;
+                }
             
             } else if (event.type == SDL_KEYDOWN) {
+
+                printf("event.key.keysym.sym: %d\n", event.key.keysym.sym);                
+
                 switch (event.key.keysym.sym) {
                 
                 case SDLK_ESCAPE:
@@ -427,6 +456,10 @@ int main(int argc, char *argv[])
         SDL_Flip(screen);
 
         frameCount++;
+    }
+
+    if (SDL_NumJoysticks() > 0) {
+        SDL_JoystickClose(joystick);
     }
 
     TTF_CloseFont(font);
