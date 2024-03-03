@@ -4,7 +4,7 @@ CROSS_COMPILE = /opt/cdata/rg35xx/arm-buildroot-linux-gnueabihf_sdk-buildroot/bi
 
 CFLAGS = -fdata-sections -ffunction-sections -fPIC -flto -Wall
 #-Ofast
-LIBS = -lSDL -lSDL_image #-lSDL_ttf -lSDL_gfx -lz -lpthread -lm -lboost_locale# -lasound
+LIBS = -lSDL -lSDL_image -lSDL_ttf #-lSDL_gfx -lz -lpthread -lm -lboost_locale# -lasound
 
 # You can use Ofast too but it can be more prone to bugs, careful.
 CFLAGS += -g -Iinclude/
