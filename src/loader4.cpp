@@ -2,7 +2,7 @@
 #include <SDL/SDL_image.h>
 #include <SDL/SDL_ttf.h>
 #include <iostream>
-
+#include <fstream>
 
 const int BTN_A = 0;
 
@@ -108,9 +108,9 @@ SDL_Surface *blackAndWhite (SDL_Surface * img) {
 
 }
 
-void printFPS(TTF_Font* font, int fps, SDL_Surface* buffer) {
+void printFPS(TTF_Font* font, int fps, std::string message, SDL_Surface* buffer) {
     
-    std::string fpsText = "FPS: " + std::to_string(fps);
+    std::string fpsText = "FPS: " + std::to_string(fps) + " - " + message;
 
     SDL_Surface* rawTextSurface = TTF_RenderText_Blended(
         font, fpsText.c_str(), {0, 0, 0});
@@ -245,12 +245,21 @@ int main(int argc, char *argv[])
     int fps = 0;
     int frameCount = 0;
     Uint32 fpsTimer = 0;
+    Uint32 readTimer = 0;
 
     int i = 0;
     int third = img_bw->h / 3;
     int current_third = 0;
     int n_row = 0;
     bool bw = true;
+
+    std::ifstream status_file( "init_status.log" );
+    std::string status_message;
+
+    if (!status_file) {
+         printf ("Error leer el fichero de estado.\n");
+        return 1;
+    }
 
     // Pintamos el fondo al estilo zx spectrum
     SDL_Rect bg_rect = {0, 0, WIDTH, HEIGHT};
@@ -401,7 +410,7 @@ int main(int argc, char *argv[])
         // Wait for key press
         while (SDL_PollEvent(&event)) {
 
-            printf("event.type: %d\n", event.type);
+            // printf("event.type: %d\n", event.type);
             
             if (event.type == SDL_QUIT) {
                 running = false;
@@ -414,7 +423,7 @@ int main(int argc, char *argv[])
                 case BTN_A: 
                     running = false;
                     break;
-                    
+
                 default:
                     printf("Press button A to exit.\n");
                     break;
@@ -445,18 +454,62 @@ int main(int argc, char *argv[])
             fpsTimer = SDL_GetTicks();
         }
 
+        // Read status file every 2 seconds
+        if (SDL_GetTicks() - readTimer >= 2000) {
+
+            std::string line;
+            bool read = false;
+
+            // Read all available lines, in case there are more than one
+            // The last one tell us the current status of the init process
+            while( std::getline( status_file, line ) ) {
+                status_message = line;
+                read = true;
+            }
+
+            // Clear the error state to continue reading next time
+            if( status_file.eof() ) {
+                status_file.clear() ;
+            }
+
+            if (read) {
+                // Get the action and update the status message accordingly
+                std::string action = status_message.substr(0, status_message.find(" "));
+                if (action == "FINISH") {
+                    status_message = "Finished!";
+                    running = false;
+
+                } else if (action == "PRINT") {
+                    status_message = status_message.substr(status_message.find(" ") + 1);
+
+                } else {
+                    // set to blank when the action is not found or recognized
+                    status_message = "";
+
+                }
+            }
+
+            readTimer = SDL_GetTicks();
+        }
+
         // printf("%d\n", fps);
         // Clear & Print FPS 
         SDL_Rect dest_rect = {BORDER, HEIGHT - BORDER - FONT_SIZE, 
-                              FONT_SIZE * 3, FONT_SIZE};
+                              WIDTH - (BORDER * 2) - 1, FONT_SIZE};
         SDL_FillRect(buffer, &dest_rect, BG_COLOR);
-        printFPS(font, fps, buffer);
+        printFPS(font, fps, status_message, buffer);
 
         SDL_BlitSurface(buffer, NULL, screen, NULL);
         SDL_Flip(screen);
 
         frameCount++;
     }
+
+    status_file.close();
+    // Clean status file contents
+    std::ofstream ofs;
+    ofs.open("init_status.log", std::ofstream::out | std::ofstream::trunc);
+    ofs.close();
 
     if (SDL_NumJoysticks() > 0) {
         SDL_JoystickClose(joystick);
