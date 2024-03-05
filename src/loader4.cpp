@@ -11,7 +11,7 @@ const int HEIGHT = 480;
 const int BORDER = 40;
 const int COLOR_ROW_H = 8;
 const int COLOR_DEPTH = 32;
-const char* FONT = "Akrobat-Regular.ttf";
+const char* FONT = "zxSpectrumStrict.ttf";
 const int FONT_SIZE = 16;
 
 
