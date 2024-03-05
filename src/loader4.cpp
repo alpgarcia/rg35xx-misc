@@ -108,28 +108,47 @@ SDL_Surface *blackAndWhite (SDL_Surface * img) {
 
 }
 
-void printFPS(TTF_Font* font, int fps, std::string message, SDL_Surface* buffer) {
+void printFPS(TTF_Font* font, int fps, int current_process, int completed, int total, std::string message, SDL_Surface* buffer, Uint32 bg_color) {
     
-    std::string fpsText = "FPS: " + std::to_string(fps) + " - " + message;
+    Sint16 x = BORDER;
+    Sint16 y = HEIGHT - BORDER - FONT_SIZE;
+    Uint16 bar_height = FONT_SIZE;
+    Uint16 bar_len = WIDTH - (BORDER * 2);
+    Uint16 bar_progress = total == 0 ? 0 : (bar_len * completed) / total;
 
-    SDL_Surface* rawTextSurface = TTF_RenderText_Blended(
-        font, fpsText.c_str(), {0, 0, 0});
+    // Draw progress bar
+    SDL_Rect bar_rect = {x, y, bar_len, bar_height};
+    SDL_FillRect(buffer, &bar_rect, bg_color);
     
-    if (!rawTextSurface) {
+    SDL_Rect progress_rect = {x, y, bar_progress, bar_height};
+    SDL_FillRect(buffer, &progress_rect, SDL_MapRGB(buffer->format, 0, 207, 21));
+
+    std::string msg =  "[" + std::to_string(current_process) + "/" + std::to_string(total) + "] " + message +
+                       " -- FPS: " + std::to_string(fps);
+    
+    // Truncate line if it's too long
+    if (msg.length() > 65) {
+        msg = msg.substr(0, 62) + "...";
+    }
+
+    SDL_Surface* raw_text_surface = TTF_RenderText_Blended(
+        font, msg.c_str(), {0, 0, 0});
+    
+    if (!raw_text_surface) {
         return;
     }
 
-    SDL_Surface* textSurface = SDL_DisplayFormatAlpha(rawTextSurface);
-    SDL_FreeSurface(rawTextSurface);
+    SDL_Surface* text_surface = SDL_DisplayFormatAlpha(raw_text_surface);
+    SDL_FreeSurface(raw_text_surface);
 
-    if(!textSurface) {
+    if(!text_surface) {
         return;
     }
 
-    SDL_Rect destRect = {BORDER, HEIGHT - BORDER - FONT_SIZE, 0, 0}; 
-    SDL_BlitSurface(textSurface, NULL, buffer, &destRect);
+    SDL_Rect msg_rect = {(static_cast<Sint16>(x + 5)), y, 0, 0}; 
+    SDL_BlitSurface(text_surface, NULL, buffer, &msg_rect);
 
-    SDL_FreeSurface(textSurface);
+    SDL_FreeSurface(text_surface);
 }
 
 
@@ -255,7 +274,10 @@ int main(int argc, char *argv[])
     bool bw = true;
 
     std::ifstream status_file(argv[2]);
-    std::string status_message;
+    std::string status_message = "Loading, please wait...";
+    int nscripts = 0;
+    int current_process = 0;
+    int completed = 0;
 
     if (!status_file) {
          printf ("Error leer el fichero de estado.\n");
@@ -477,6 +499,27 @@ int main(int argc, char *argv[])
                     status_message = "Finished!";
                     running = false;
 
+                } else if (action == "SCRIPTS") {
+                    // convert the string to an integer
+                    nscripts = std::stoi(status_message.substr(status_message.find(" ") + 1));
+                    status_message = "Starting system...";
+                
+                } else if (action == "START") {
+                    status_message = status_message.substr(status_message.find(" ") + 1);
+                    if (nscripts > 0 && current_process < nscripts) {
+                        current_process++;
+                    } else {
+                        printf("ERROR: declared number of scripts is less than the actual number of scripts executed\n");
+                    }
+
+                } else if (action == "END") {
+                    status_message = status_message.substr(status_message.find(" ") + 1);
+                    if (nscripts > 0 && completed < nscripts) {
+                        completed++;
+                    } else {
+                        printf("ERROR: declared number of scripts is less than the actual number of scripts executed\n");
+                    }
+
                 } else if (action == "PRINT") {
                     status_message = status_message.substr(status_message.find(" ") + 1);
 
@@ -491,11 +534,8 @@ int main(int argc, char *argv[])
         }
 
         // printf("%d\n", fps);
-        // Clear & Print FPS 
-        SDL_Rect dest_rect = {BORDER, HEIGHT - BORDER - FONT_SIZE, 
-                              WIDTH - (BORDER * 2) - 1, FONT_SIZE};
-        SDL_FillRect(buffer, &dest_rect, BG_COLOR);
-        printFPS(font, fps, status_message, buffer);
+        // Clear & Print FPS and status message
+        printFPS(font, fps, current_process, completed, nscripts, status_message, buffer, BG_COLOR);
 
         SDL_BlitSurface(buffer, NULL, screen, NULL);
         SDL_Flip(screen);
