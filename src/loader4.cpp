@@ -137,8 +137,9 @@ int main(int argc, char *argv[])
 {
 
     // Comprobamos que la llamada incluya la ruta de la imagen
-    if (argc != 2) {
-        printf ("Usage %s <imagen>\n", argv[0]);
+    // y la del fichero de estado
+    if (argc != 3) {
+        printf ("Usage %s <imagen> <status_file>\n", argv[0]);
         return 1;
     }
 
@@ -253,7 +254,7 @@ int main(int argc, char *argv[])
     int n_row = 0;
     bool bw = true;
 
-    std::ifstream status_file( "init_status.log" );
+    std::ifstream status_file(argv[2]);
     std::string status_message;
 
     if (!status_file) {
@@ -417,21 +418,18 @@ int main(int argc, char *argv[])
 
             } else if (event.type == SDL_JOYBUTTONDOWN) {
 
-                printf("Button: %d\n", event.jbutton.button);
+                // printf("Button: %d\n", event.jbutton.button);
 
                 switch (event.jbutton.button) {
                 case BTN_A: 
                     running = false;
                     break;
 
-                default:
-                    printf("Press button A to exit.\n");
-                    break;
                 }
             
             } else if (event.type == SDL_KEYDOWN) {
 
-                printf("event.key.keysym.sym: %d\n", event.key.keysym.sym);                
+                // printf("event.key.keysym.sym: %d\n", event.key.keysym.sym);                
 
                 switch (event.key.keysym.sym) {
                 
@@ -440,7 +438,7 @@ int main(int argc, char *argv[])
                     break;
                 
                 default:
-                    printf("Press Esc to exit.\n");
+                    // printf("Press Esc to exit.\n");
                     break;
                 
                 }
