@@ -78,7 +78,7 @@ SDL_Surface *convertToScreen (SDL_Surface * img, SDL_Surface * screen) {
     return converted;
 }
 
-SDL_Surface *blackAndWhite (SDL_Surface * img) {
+SDL_Surface *blackAndWhite (SDL_Surface * img, int threshold) {
 
     SDL_Surface *img_bw = SDL_CreateRGBSurface (
         SDL_SWSURFACE, img->w, img->h, img->format->BitsPerPixel, 0, 0, 0, 0);
@@ -96,7 +96,7 @@ SDL_Surface *blackAndWhite (SDL_Surface * img) {
         Uint8 gray = 0.299*r + 0.587*g + 0.114*b;
         
         // comprobamos si está más cerca de 0 o de 255
-        gray = (gray < 64) ? 0 : 255;
+        gray = (gray < threshold) ? 0 : 255;
 
         dest_pixels[i] = SDL_MapRGB(img_bw->format, gray, gray, gray);
     }
@@ -157,8 +157,8 @@ int main(int argc, char *argv[])
 
     // Comprobamos que la llamada incluya la ruta de la imagen
     // y la del fichero de estado
-    if (argc != 3) {
-        printf ("Usage %s <imagen> <status_file>\n", argv[0]);
+    if (argc != 4) {
+        printf ("Usage %s <imagen> <status_file> <bw_threshold>\n", argv[0]);
         return 1;
     }
 
@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
     printf("w: %d, h: %d\n", img->w, img->h);
     
     // Convierte el color de la imagen a blanco y negro
-    SDL_Surface *img_bw = blackAndWhite(img);
+    SDL_Surface *img_bw = blackAndWhite(img, std::stoi(argv[3]));
     if (img_bw == NULL) {
         return 1;
     }
